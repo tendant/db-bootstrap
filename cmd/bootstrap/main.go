@@ -1,0 +1,37 @@
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/alecthomas/kong"
+	bootstrap "github.com/tendant/db-setup-tool"
+)
+
+var CLI struct {
+	Run struct {
+		ConfigPath string `help:"Path to YAML bootstrap config" default:"bootstrap.yaml"`
+	} `cmd:"" help:"Run the bootstrap process"`
+}
+
+func main() {
+	kctx := kong.Parse(&CLI,
+		kong.Name("pg-bootstrap"),
+		kong.Description("PostgreSQL bootstrap CLI tool."),
+		kong.UsageOnError(),
+	)
+
+	switch kctx.Command() {
+	case "run":
+		yamlFile, err := os.ReadFile(CLI.Run.ConfigPath)
+		if err != nil {
+			log.Fatalf("Failed to read config file: %v", err)
+		}
+
+		if err := bootstrap.BootstrapDatabase(yamlFile); err != nil {
+			log.Fatalf("Failed to bootstrap database: %v", err)
+		}
+	default:
+		log.Fatalf("Unknown command: %s", kctx.Command())
+	}
+}
