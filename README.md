@@ -19,8 +19,15 @@ Clone the repo and build the CLI:
 go install github.com/tendant/db-bootstrap/cmd/dbstrap@latest
 ```
 
+## Run from binary
 
-## How to run
+```bash
+export DATABASE_URL=postgres://postgres:pwd@localhost:5432/postgres
+export TEST_USER_PASSWORD=pass123
+dbstrap run --config=samples/bootstrap.yaml
+```
+
+## How to run from source
 
 1. **Set environment variables**:
 
@@ -34,4 +41,4 @@ See the Sample Config section for a working example.
 
 3. Run the CLI:
 
-    go run ./cmd/dbstrap run --config-path=samples/bootstrap.yaml
+    go run ./cmd/dbstrap run --config=samples/bootstrap.yaml

@@ -10,7 +10,7 @@ import (
 
 var CLI struct {
 	Run struct {
-		ConfigPath string `help:"Path to YAML bootstrap config" default:"bootstrap.yaml"`
+		Config string `help:"Path to YAML bootstrap config" default:"bootstrap.yaml"`
 	} `cmd:"" help:"Run the dbstrap process"`
 }
 
@@ -23,7 +23,7 @@ func main() {
 
 	switch kctx.Command() {
 	case "run":
-		yamlFile, err := os.ReadFile(CLI.Run.ConfigPath)
+		yamlFile, err := os.ReadFile(CLI.Run.Config)
 		if err != nil {
 			log.Fatalf("Failed to read config file: %v", err)
 		}
