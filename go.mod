@@ -1,4 +1,4 @@
-module github.com/tendant/db-setup-tool
+module github.com/tendant/db-bootstrap
 
 go 1.23.5
 
