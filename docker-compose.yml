@@ -1,0 +1,10 @@
+# docker-compose.yaml
+version: '3'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: pwd
+    ports:
+      - "5432:5432"
