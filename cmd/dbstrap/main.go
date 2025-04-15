@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	bootstrap "github.com/tendant/db-bootstrap"
+	bootstrap "github.com/tendant/dbstrap/bootstrap"
 )
 
 var CLI struct {

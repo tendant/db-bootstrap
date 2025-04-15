@@ -16,7 +16,7 @@ A CLI tool for bootstrapping PostgreSQL databases, users, schemas, and extension
 Clone the repo and build the CLI:
 
 ```bash
-go install github.com/tendant/db-bootstrap/cmd/dbstrap@latest
+go install github.com/tendant/dbstrap/cmd/dbstrap@latest
 ```
 
 ## Run from binary
