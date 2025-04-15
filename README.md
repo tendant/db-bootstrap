@@ -1,4 +1,4 @@
-# pg-bootstrap
+# db-bootstrap
 
 A CLI tool for bootstrapping PostgreSQL databases, users, schemas, and extensions from a YAML configuration. Powered by Golang and [kong](https://github.com/alecthomas/kong) CLI library.
 
@@ -16,7 +16,7 @@ A CLI tool for bootstrapping PostgreSQL databases, users, schemas, and extension
 Clone the repo and build the CLI:
 
 ```bash
-go install github.com/tendant/db-bootstrap/cmd/bootstrap@latest
+go install github.com/tendant/db-bootstrap/cmd/dbstrap@latest
 ```
 
 
@@ -34,4 +34,4 @@ See the Sample Config section for a working example.
 
 3. Run the CLI:
 
-    go run ./cmd/bootstrap run --config-path=samples/bootstrap.yaml
+    go run ./cmd/dbstrap run --config-path=samples/bootstrap.yaml
