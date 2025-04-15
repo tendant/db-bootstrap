@@ -19,3 +19,20 @@ Clone the repo and build the CLI:
 git clone https://github.com/tendant/db-bootstrap.git
 cd db-bootstrap
 go build -o db-bootstrap ./cmd/bootstrap
+
+
+## How to run
+
+1. **Set environment variables**:
+
+   ```bash
+   export DATABASE_URL=postgres://postgres:pwd@localhost:5432/postgres
+   export TEST_USER_PASSWORD=pass123
+   
+2. Create your config file (bootstrap.yaml):
+
+See the Sample Config section for a working example.
+
+3. Run the CLI:
+
+    go run cmd/bootstrap --config-path=samples/bootstrap.yaml

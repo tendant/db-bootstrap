@@ -9,11 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"gopkg.in/yaml.v3"
-
-	_ "embed"
 )
 
-//go:embed bootstrap.yaml
 var DefaultYAML []byte
 
 type User struct {
