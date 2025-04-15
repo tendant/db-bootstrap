@@ -11,13 +11,13 @@ import (
 var CLI struct {
 	Run struct {
 		ConfigPath string `help:"Path to YAML bootstrap config" default:"bootstrap.yaml"`
-	} `cmd:"" help:"Run the bootstrap process"`
+	} `cmd:"" help:"Run the dbstrap process"`
 }
 
 func main() {
 	kctx := kong.Parse(&CLI,
-		kong.Name("db-bootstrap"),
-		kong.Description("PostgreSQL bootstrap CLI tool."),
+		kong.Name("dbstrap"),
+		kong.Description("Database bootstrap CLI tool."),
 		kong.UsageOnError(),
 	)
 
