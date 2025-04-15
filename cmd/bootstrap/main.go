@@ -16,7 +16,7 @@ var CLI struct {
 
 func main() {
 	kctx := kong.Parse(&CLI,
-		kong.Name("pg-bootstrap"),
+		kong.Name("db-bootstrap"),
 		kong.Description("PostgreSQL bootstrap CLI tool."),
 		kong.UsageOnError(),
 	)
