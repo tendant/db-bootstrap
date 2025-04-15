@@ -248,7 +248,7 @@ func createExtensions(ctx context.Context, conn *pgx.Conn, extensions []string) 
 
 		if !exists {
 			// Build CREATE EXTENSION command
-			createCmd := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS %s", extension)
+			createCmd := fmt.Sprintf(`CREATE EXTENSION IF NOT EXISTS "%s"`, extension)
 
 			slog.Info("Creating extension", "name", extension)
 			// Execute the CREATE EXTENSION command

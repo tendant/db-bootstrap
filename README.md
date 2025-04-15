@@ -35,4 +35,4 @@ See the Sample Config section for a working example.
 
 3. Run the CLI:
 
-    go run cmd/bootstrap --config-path=samples/bootstrap.yaml
+    go run ./cmd/bootstrap run --config-path=samples/bootstrap.yaml
