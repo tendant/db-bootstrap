@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kong"
-	"github.com/tendant/dbstrap/bootstrap"
+	"github.com/tendant/dbstrap"
 )
 
 var CLI struct {
@@ -28,7 +28,7 @@ func main() {
 			log.Fatalf("Failed to read config file: %v", err)
 		}
 
-		if err := bootstrap.BootstrapDatabase(yamlFile); err != nil {
+		if err := dbstrap.BootstrapDatabase(yamlFile); err != nil {
 			log.Fatalf("Failed to bootstrap database: %v", err)
 		}
 	default:
