@@ -23,8 +23,8 @@ build-static:
 docker-build:
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
-		--tag $(BINARY_NAME):$(VERSION) \
-		--output type=docker \
+		--push \
+		--tag wang/dbstrap:$(VERSION) \
 		.
 
 docker-run:
