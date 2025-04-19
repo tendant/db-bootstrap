@@ -24,10 +24,13 @@ type User struct {
 
 // SchemaGrant represents a grant of privileges on a schema to a user or role
 type SchemaGrant struct {
-	User           string   `yaml:"user"`
-	Role           string   `yaml:"role"`
-	Privileges     []string `yaml:"privileges"`
-	TablePrivileges []string `yaml:"table_privileges"`
+	User                string   `yaml:"user"`
+	Role                string   `yaml:"role"`
+	Privileges          []string `yaml:"privileges"`
+	TablePrivileges     []string `yaml:"table_privileges"`
+	SequencePrivileges  []string `yaml:"sequence_privileges"`
+	FunctionPrivileges  []string `yaml:"function_privileges"`
+	DefaultPrivileges   []string `yaml:"default_privileges"`
 }
 
 type Schema struct {
@@ -254,6 +257,41 @@ func createSchemas(ctx context.Context, conn *pgx.Conn, schemas []Schema) error 
 				_, err = conn.Exec(ctx, tableGrantCmd)
 				if err != nil {
 					return fmt.Errorf("failed to grant privileges on tables in schema %s to %s: %w", schema.Name, grantee, err)
+				}
+			}
+			
+			// Apply sequence privileges if specified
+			if len(grant.SequencePrivileges) > 0 {
+				seqPrivileges := strings.Join(grant.SequencePrivileges, ", ")
+				seqGrantCmd := fmt.Sprintf("GRANT %s ON ALL SEQUENCES IN SCHEMA %s TO %s", seqPrivileges, schema.Name, grantee)
+				slog.Info("Applying sequence grants", "schema", schema.Name, granteeType, grantee, "sequence_privileges", seqPrivileges)
+				_, err = conn.Exec(ctx, seqGrantCmd)
+				if err != nil {
+					return fmt.Errorf("failed to grant privileges on sequences in schema %s to %s: %w", schema.Name, grantee, err)
+				}
+			}
+			
+			// Apply function privileges if specified
+			if len(grant.FunctionPrivileges) > 0 {
+				funcPrivileges := strings.Join(grant.FunctionPrivileges, ", ")
+				funcGrantCmd := fmt.Sprintf("GRANT %s ON ALL FUNCTIONS IN SCHEMA %s TO %s", funcPrivileges, schema.Name, grantee)
+				slog.Info("Applying function grants", "schema", schema.Name, granteeType, grantee, "function_privileges", funcPrivileges)
+				_, err = conn.Exec(ctx, funcGrantCmd)
+				if err != nil {
+					return fmt.Errorf("failed to grant privileges on functions in schema %s to %s: %w", schema.Name, grantee, err)
+				}
+			}
+			
+			// Apply default privileges for future objects if specified
+			if len(grant.DefaultPrivileges) > 0 {
+				defPrivileges := strings.Join(grant.DefaultPrivileges, ", ")
+				// Default privileges are set for objects created by the schema owner
+				defGrantCmd := fmt.Sprintf("ALTER DEFAULT PRIVILEGES FOR ROLE %s IN SCHEMA %s GRANT %s ON TABLES TO %s", 
+					schema.Owner, schema.Name, defPrivileges, grantee)
+				slog.Info("Applying default privileges", "schema", schema.Name, granteeType, grantee, "default_privileges", defPrivileges)
+				_, err = conn.Exec(ctx, defGrantCmd)
+				if err != nil {
+					return fmt.Errorf("failed to grant default privileges in schema %s to %s: %w", schema.Name, grantee, err)
 				}
 			}
 		}

@@ -7,7 +7,7 @@ A CLI tool for bootstrapping PostgreSQL databases, users, schemas, and extension
 - Create users with login privileges
 - Set user roles and ownerships
 - Bootstrap databases with custom encoding, collation, and templates
-- Create schemas with specific grants to users and roles, including table-level privileges
+- Create schemas with specific grants to users and roles, including table, sequence, function, and default privileges
 - Install database extensions
 - Manage grants at both database and schema levels
 
@@ -80,18 +80,30 @@ databases:
           - user: test_user
             privileges: [USAGE, CREATE]
             table_privileges: [SELECT, INSERT, UPDATE, DELETE]
+            sequence_privileges: [USAGE, SELECT, UPDATE]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT, INSERT, UPDATE, DELETE]
           - role: readonly_role
             privileges: [USAGE]
             table_privileges: [SELECT]
+            sequence_privileges: [USAGE, SELECT]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT]
       - name: analytics
         owner: test_user
         grants:
           - user: test_user
             privileges: [USAGE, CREATE]
             table_privileges: [SELECT, INSERT, UPDATE, DELETE]
+            sequence_privileges: [USAGE, SELECT, UPDATE]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT, INSERT, UPDATE, DELETE]
           - role: readonly_role
             privileges: [USAGE]
             table_privileges: [SELECT]
+            sequence_privileges: [USAGE, SELECT]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT]
 ```
 
 In this example, we're creating:
@@ -99,4 +111,8 @@ In this example, we're creating:
 - A database named `test_db` with the UUID extension
 - Two schemas: `public` and `analytics`
 - Grants at both database and schema levels, including role-based permissions
-- Table-level privileges for all tables within each schema
+- Comprehensive object privileges within schemas:
+  - Table privileges for all existing tables
+  - Sequence privileges for all sequences (important for auto-incrementing columns)
+  - Function privileges for all stored procedures and functions
+  - Default privileges for future objects created in the schema

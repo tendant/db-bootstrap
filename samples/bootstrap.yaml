@@ -30,15 +30,27 @@ databases:
           - user: test_user
             privileges: [USAGE, CREATE]
             table_privileges: [SELECT, INSERT, UPDATE, DELETE]
+            sequence_privileges: [USAGE, SELECT, UPDATE]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT, INSERT, UPDATE, DELETE]
           - role: readonly_role
             privileges: [USAGE]
             table_privileges: [SELECT]
+            sequence_privileges: [USAGE, SELECT]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT]
       - name: analytics
         owner: test_user
         grants:
           - user: test_user
             privileges: [USAGE, CREATE]
             table_privileges: [SELECT, INSERT, UPDATE, DELETE]
+            sequence_privileges: [USAGE, SELECT, UPDATE]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT, INSERT, UPDATE, DELETE]
           - role: readonly_role
             privileges: [USAGE]
             table_privileges: [SELECT]
+            sequence_privileges: [USAGE, SELECT]
+            function_privileges: [EXECUTE]
+            default_privileges: [SELECT]
