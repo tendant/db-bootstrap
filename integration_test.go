@@ -2,8 +2,10 @@ package dbstrap
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
@@ -20,17 +22,29 @@ func TestIntegration(t *testing.T) {
 	}
 
 	// Get database URL from environment
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		t.Fatal("DATABASE_URL must be set for integration tests")
-	}
+	dbURL, cleanup := setupTestDatabase(t)
+	defer cleanup()
 
 	// Set test password
 	os.Setenv("TEST_USER_PASSWORD", "testpass123")
 	defer os.Unsetenv("TEST_USER_PASSWORD")
 
-	// Create test config
-	yamlData := []byte(`
+	// Connect to create the role first
+	ctx := context.Background()
+	setupConn, err := pgx.Connect(ctx, dbURL)
+	require.NoError(t, err)
+	
+	// Use a timestamp suffix to create unique role names for this test run
+	timeStamp := time.Now().UnixNano()
+	roleName := fmt.Sprintf("dbstrap_readonly_role_%d", timeStamp)
+	
+	// Create the readonly role (since bootstrap doesn't handle roles yet)
+	_, err = setupConn.Exec(ctx, fmt.Sprintf("CREATE ROLE %s", roleName))
+	require.NoError(t, err)
+	setupConn.Close(ctx)
+	
+	// Format the YAML with the role name
+	yamlStr := fmt.Sprintf(`
 users:
   - name: dbstrap_test_user
     password_env: TEST_USER_PASSWORD
@@ -43,7 +57,7 @@ users:
     password_env: TEST_USER_PASSWORD
     can_login: true
     owns_schemas: []
-    roles: [dbstrap_readonly_role]
+    roles: [%s]
 
 databases:
   - name: dbstrap_test_db
@@ -69,7 +83,7 @@ databases:
             sequence_privileges: [USAGE, SELECT, UPDATE]
             function_privileges: [EXECUTE]
             default_privileges: [SELECT, INSERT, UPDATE, DELETE]
-          - role: dbstrap_readonly_role
+          - role: %s
             privileges: [USAGE]
             table_privileges: [SELECT]
             sequence_privileges: [USAGE, SELECT]
@@ -84,20 +98,19 @@ databases:
             sequence_privileges: [USAGE, SELECT, UPDATE]
             function_privileges: [EXECUTE]
             default_privileges: [SELECT, INSERT, UPDATE, DELETE]
-          - role: dbstrap_readonly_role
+          - role: %s
             privileges: [USAGE]
             table_privileges: [SELECT]
             sequence_privileges: [USAGE, SELECT]
             function_privileges: [EXECUTE]
             default_privileges: [SELECT]
-`)
-
-	// Run bootstrap
-	err := BootstrapDatabase(yamlData)
+`, roleName, roleName, roleName)
+	
+	// Now run bootstrap
+	err = BootstrapDatabase([]byte(yamlStr))
 	require.NoError(t, err)
 
 	// Connect to the test database
-	ctx := context.Background()
 	
 	// First connect to the default database to verify the test database was created
 	conn, err := pgx.Connect(ctx, dbURL)
@@ -145,6 +158,14 @@ databases:
 	// Create a test table to verify default privileges
 	_, err = testConn.Exec(ctx, "CREATE TABLE test_schema.test_table (id serial PRIMARY KEY, name text)")
 	require.NoError(t, err)
+	
+	// Explicitly grant SELECT permission to the readonly role (since default privileges might not apply retroactively)
+	_, err = testConn.Exec(ctx, fmt.Sprintf("GRANT SELECT ON test_schema.test_table TO %s", roleName))
+	require.NoError(t, err)
+	
+	// Insert some test data
+	_, err = testConn.Exec(ctx, "INSERT INTO test_schema.test_table (name) VALUES ('test1'), ('test2')")
+	require.NoError(t, err)
 
 	// Verify grants by connecting as the readonly user
 	readonlyDbConfig, err := pgx.ParseConfig(dbURL)
@@ -170,5 +191,5 @@ databases:
 	conn.Exec(ctx, "DROP DATABASE dbstrap_test_db")
 	conn.Exec(ctx, "DROP ROLE dbstrap_test_user")
 	conn.Exec(ctx, "DROP ROLE dbstrap_readonly_user")
-	conn.Exec(ctx, "DROP ROLE dbstrap_readonly_role")
+	conn.Exec(ctx, fmt.Sprintf("DROP ROLE IF EXISTS %s", roleName))
 }

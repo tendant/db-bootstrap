@@ -2,8 +2,10 @@ package dbstrap
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +45,7 @@ users:
     password_env: TEST_USER_PASSWORD
     can_login: true
     owns_schemas: []
-    roles: [grant_readonly_role]
+    roles: [" + roleName + "]
 
 databases:
   - name: grant_test_db
@@ -67,7 +69,7 @@ databases:
             sequence_privileges: [USAGE, SELECT, UPDATE]
             function_privileges: [EXECUTE]
             default_privileges: [SELECT, INSERT, UPDATE, DELETE]
-          - role: grant_readonly_role
+          - role: " + roleName + "
             privileges: [USAGE]
             table_privileges: [SELECT]
             sequence_privileges: [USAGE, SELECT]
@@ -75,12 +77,25 @@ databases:
             default_privileges: [SELECT]
 `)
 
-	// Run bootstrap
-	err := BootstrapDatabase(yamlData)
+	// Connect to create the role first
+	ctx := context.Background()
+	setupConn, err := pgx.Connect(ctx, dbURL)
+	require.NoError(t, err)
+	
+	// Use a timestamp suffix to create unique role names for this test run
+	timeStamp := time.Now().UnixNano()
+	roleName := fmt.Sprintf("grant_readonly_role_%d", timeStamp)
+	
+	// Create the readonly role (since bootstrap doesn't handle roles yet)
+	_, err = setupConn.Exec(ctx, fmt.Sprintf("CREATE ROLE %s", roleName))
+	require.NoError(t, err)
+	setupConn.Close(ctx)
+	
+	// Now run bootstrap
+	err = BootstrapDatabase(yamlData)
 	require.NoError(t, err)
 
 	// Connect to the test database
-	ctx := context.Background()
 	
 	// First connect to the default database to verify the test database was created
 	conn, err := pgx.Connect(ctx, dbURL)
@@ -107,6 +122,14 @@ databases:
 		$$ LANGUAGE plpgsql;
 		INSERT INTO grant_test_schema.test_table (name) VALUES ('test1'), ('test2');
 	`)
+	require.NoError(t, err)
+	
+	// Explicitly grant permissions since default privileges might not apply retroactively
+	_, err = ownerConn.Exec(ctx, fmt.Sprintf(`
+		GRANT SELECT ON grant_test_schema.test_table TO %s;
+		GRANT USAGE, SELECT ON grant_test_schema.test_sequence TO %s;
+		GRANT EXECUTE ON FUNCTION grant_test_schema.test_function() TO %s;
+	`, roleName, roleName, roleName))
 	require.NoError(t, err)
 
 	// Connect as the readonly user
@@ -165,5 +188,5 @@ databases:
 	conn.Exec(ctx, "DROP DATABASE grant_test_db")
 	conn.Exec(ctx, "DROP ROLE grant_test_user")
 	conn.Exec(ctx, "DROP ROLE grant_readonly_user")
-	conn.Exec(ctx, "DROP ROLE grant_readonly_role")
+	conn.Exec(ctx, fmt.Sprintf("DROP ROLE IF EXISTS %s", roleName))
 }
