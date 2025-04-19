@@ -24,9 +24,10 @@ type User struct {
 
 // SchemaGrant represents a grant of privileges on a schema to a user or role
 type SchemaGrant struct {
-	User       string   `yaml:"user"`
-	Role       string   `yaml:"role"`
-	Privileges []string `yaml:"privileges"`
+	User           string   `yaml:"user"`
+	Role           string   `yaml:"role"`
+	Privileges     []string `yaml:"privileges"`
+	TablePrivileges []string `yaml:"table_privileges"`
 }
 
 type Schema struct {
@@ -220,8 +221,6 @@ func createSchemas(ctx context.Context, conn *pgx.Conn, schemas []Schema) error 
 
 		// Apply grants
 		for _, grant := range schema.Grants {
-			privileges := strings.Join(grant.Privileges, ", ")
-			
 			// Determine grantee (user or role)
 			var grantee string
 			var granteeType string
@@ -236,11 +235,26 @@ func createSchemas(ctx context.Context, conn *pgx.Conn, schemas []Schema) error 
 				return fmt.Errorf("schema grant must specify either user or role")
 			}
 			
-			grantCmd := fmt.Sprintf("GRANT %s ON SCHEMA %s TO %s", privileges, schema.Name, grantee)
-			slog.Info("Applying schema grant", "schema", schema.Name, granteeType, grantee, "privileges", privileges)
-			_, err = conn.Exec(ctx, grantCmd)
-			if err != nil {
-				return fmt.Errorf("failed to grant privileges on schema %s to %s: %w", schema.Name, grantee, err)
+			// Apply schema privileges
+			if len(grant.Privileges) > 0 {
+				privileges := strings.Join(grant.Privileges, ", ")
+				grantCmd := fmt.Sprintf("GRANT %s ON SCHEMA %s TO %s", privileges, schema.Name, grantee)
+				slog.Info("Applying schema grant", "schema", schema.Name, granteeType, grantee, "privileges", privileges)
+				_, err = conn.Exec(ctx, grantCmd)
+				if err != nil {
+					return fmt.Errorf("failed to grant privileges on schema %s to %s: %w", schema.Name, grantee, err)
+				}
+			}
+			
+			// Apply table privileges if specified
+			if len(grant.TablePrivileges) > 0 {
+				tablePrivileges := strings.Join(grant.TablePrivileges, ", ")
+				tableGrantCmd := fmt.Sprintf("GRANT %s ON ALL TABLES IN SCHEMA %s TO %s", tablePrivileges, schema.Name, grantee)
+				slog.Info("Applying table grants", "schema", schema.Name, granteeType, grantee, "table_privileges", tablePrivileges)
+				_, err = conn.Exec(ctx, tableGrantCmd)
+				if err != nil {
+					return fmt.Errorf("failed to grant privileges on tables in schema %s to %s: %w", schema.Name, grantee, err)
+				}
 			}
 		}
 	}
