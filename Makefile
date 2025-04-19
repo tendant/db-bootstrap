@@ -41,4 +41,17 @@ install:
 test:
 	go test ./...
 
+test-unit:
+	go test -v -run "^Test[^Integration].*"
+
+test-integration:
+	docker-compose up -d
+	sleep 3
+	DATABASE_URL="postgres://postgres:pwd@localhost:5432/postgres" INTEGRATION_TEST=true go test -v -run "^TestIntegration.*"
+	docker-compose down
+
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
 .PHONY: all build clean run build-static docker-build docker-run install test

@@ -5,6 +5,7 @@ go 1.23.5
 require (
 	github.com/alecthomas/kong v1.10.0
 	github.com/jackc/pgx/v5 v5.7.4
+	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
