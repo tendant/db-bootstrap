@@ -22,8 +22,10 @@ type User struct {
 	Roles       []string `yaml:"roles"`
 }
 
+// SchemaGrant represents a grant of privileges on a schema to a user or role
 type SchemaGrant struct {
 	User       string   `yaml:"user"`
+	Role       string   `yaml:"role"`
 	Privileges []string `yaml:"privileges"`
 }
 
@@ -219,11 +221,26 @@ func createSchemas(ctx context.Context, conn *pgx.Conn, schemas []Schema) error 
 		// Apply grants
 		for _, grant := range schema.Grants {
 			privileges := strings.Join(grant.Privileges, ", ")
-			grantCmd := fmt.Sprintf("GRANT %s ON SCHEMA %s TO %s", privileges, schema.Name, grant.User)
-			slog.Info("Applying schema grant", "schema", schema.Name, "user", grant.User, "privileges", privileges)
+			
+			// Determine grantee (user or role)
+			var grantee string
+			var granteeType string
+			
+			if grant.User != "" {
+				grantee = grant.User
+				granteeType = "user"
+			} else if grant.Role != "" {
+				grantee = grant.Role
+				granteeType = "role"
+			} else {
+				return fmt.Errorf("schema grant must specify either user or role")
+			}
+			
+			grantCmd := fmt.Sprintf("GRANT %s ON SCHEMA %s TO %s", privileges, schema.Name, grantee)
+			slog.Info("Applying schema grant", "schema", schema.Name, granteeType, grantee, "privileges", privileges)
 			_, err = conn.Exec(ctx, grantCmd)
 			if err != nil {
-				return fmt.Errorf("failed to grant privileges on schema %s: %w", schema.Name, err)
+				return fmt.Errorf("failed to grant privileges on schema %s to %s: %w", schema.Name, grantee, err)
 			}
 		}
 	}

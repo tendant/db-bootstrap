@@ -5,6 +5,11 @@ users:
     owns_schemas:
       - public
     roles: []
+  - name: read_only_user
+    password_env: TEST_USER_PASSWORD
+    can_login: true
+    owns_schemas: []
+    roles: [readonly_role]
 
 databases:
   - name: test_db
@@ -24,3 +29,12 @@ databases:
         grants:
           - user: test_user
             privileges: [USAGE, CREATE]
+          - role: readonly_role
+            privileges: [USAGE]
+      - name: analytics
+        owner: test_user
+        grants:
+          - user: test_user
+            privileges: [USAGE, CREATE]
+          - role: readonly_role
+            privileges: [USAGE]
